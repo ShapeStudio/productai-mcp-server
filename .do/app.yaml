@@ -1,0 +1,48 @@
+name: productai-mcp-server
+region: nyc
+services:
+  - name: web
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      repo: ShapeStudio/productai-mcp-server
+      branch: main
+      deploy_on_push: true
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    http_port: 8080
+    health_check:
+      http_path: /healthz
+    routes:
+      - path: /
+    envs:
+      - key: PORT
+        value: "8080"
+        scope: RUN_TIME
+      - key: PUBLIC_URL
+        scope: RUN_TIME
+        value: https://mcp.productai.photo
+      - key: PRODUCTAI_API_BASE
+        scope: RUN_TIME
+        value: https://api.productai.photo/v1
+      - key: AUTH0_DOMAIN
+        scope: RUN_TIME
+        value: productai.eu.auth0.com
+      - key: AUTH0_ISSUER_BASE_URL
+        scope: RUN_TIME
+        value: https://productai.eu.auth0.com/
+      - key: AUTH0_AUDIENCE
+        scope: RUN_TIME
+        value: https://relum-api-production-cef0fcef8ef6.herokuapp.com/v1
+      - key: AUTH0_MCP_CLIENT_ID
+        scope: RUN_TIME
+        type: SECRET
+      - key: AUTH0_MCP_CLIENT_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: OAUTH_JWT_SECRET
+        scope: RUN_TIME
+        type: SECRET
