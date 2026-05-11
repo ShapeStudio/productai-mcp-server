@@ -14,28 +14,73 @@ export const MODELS = [
 
 export type Model = (typeof MODELS)[number];
 
+const API_KEY_NAME = (userId: string) => `Claude MCP (#${userId})`;
+const API_KEY_LEN = 32;
+const KEY_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
 const apiKeyCache = new Map<string, { key: string; expiresAt: number }>();
 const CACHE_TTL_MS = 60_000;
 
-async function fetchUserApiKey(userId: string): Promise<string> {
+function randomKey(): string {
+  let s = "";
+  const bytes = crypto.getRandomValues(new Uint8Array(API_KEY_LEN));
+  for (let i = 0; i < API_KEY_LEN; i++) {
+    s += KEY_ALPHABET[bytes[i]! % KEY_ALPHABET.length];
+  }
+  return s;
+}
+
+/**
+ * Return an active relum API key for the given relum users.id, minting one
+ * automatically if the user doesn't have one yet. This is what lets users
+ * "just connect" from Claude without ever opening the ProductAI dashboard.
+ */
+export async function ensureApiKey(userId: string): Promise<string> {
   const cached = apiKeyCache.get(userId);
   if (cached && cached.expiresAt > Date.now()) return cached.key;
 
-  const r = await query<{ key: string }>(
+  const existing = await query<{ key: string }>(
     `select "key" from "ApiKeys"
-     where "userId" = $1 and status = 'active'
+     where "userId" = $1 and status = 'ACTIVE'
      order by "createdAt" desc nulls last, "id" desc
      limit 1`,
     [Number(userId)]
   );
-  const key = r.rows[0]?.key;
-  if (!key) {
-    throw new Error(
-      "No active ProductAI API key found for this account. Create one at https://create.productai.photo/dashboard/api-access then try again."
-    );
+  if (existing.rows[0]?.key) {
+    apiKeyCache.set(userId, { key: existing.rows[0].key, expiresAt: Date.now() + CACHE_TTL_MS });
+    return existing.rows[0].key;
   }
-  apiKeyCache.set(userId, { key, expiresAt: Date.now() + CACHE_TTL_MS });
-  return key;
+
+  // Mint a new key matching the relum-api format. Retry on the rare
+  // collision against the global UNIQUE constraint.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const key = randomKey();
+    const last4 = key.slice(-4);
+    const name = API_KEY_NAME(userId);
+    try {
+      await query(
+        `insert into "ApiKeys" ("userId", name, "key", last4, status, "createdAt", "updatedAt")
+         values ($1, $2, $3, $4, 'ACTIVE', now(), now())
+         on conflict ("name") do nothing`,
+        [Number(userId), name, key, last4]
+      );
+      const verify = await query<{ key: string }>(
+        `select "key" from "ApiKeys"
+         where "userId" = $1 and status = 'ACTIVE'
+         order by "createdAt" desc nulls last, "id" desc
+         limit 1`,
+        [Number(userId)]
+      );
+      if (verify.rows[0]?.key) {
+        apiKeyCache.set(userId, { key: verify.rows[0].key, expiresAt: Date.now() + CACHE_TTL_MS });
+        return verify.rows[0].key;
+      }
+    } catch (err) {
+      // most likely a unique-key collision; try again
+      continue;
+    }
+  }
+  throw new Error("Could not provision a ProductAI API key for this account. Please try again or contact support.");
 }
 
 export async function productaiRequest(
@@ -44,7 +89,7 @@ export async function productaiRequest(
   path: string,
   body?: Record<string, unknown>
 ): Promise<unknown> {
-  const apiKey = await fetchUserApiKey(userId);
+  const apiKey = await ensureApiKey(userId);
   const url = `${config.productaiApiBase}${path}`;
   const headers: Record<string, string> = { "x-api-key": apiKey };
   let payload: string | undefined;
