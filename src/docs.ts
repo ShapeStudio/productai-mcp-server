@@ -25,12 +25,12 @@ function wrap(body: string): string {
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Use ProductAI inside Claude</title>
+<title>ProductAI in Claude — Accurate on-brand AI Product Photos and more</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="https://create.productai.photo/logo-pai.svg">
-<meta name="description" content="Connect ProductAI to Claude and generate product photos in chat. Trusted by 20,000+ brands and creators.">
-<meta property="og:title" content="Use ProductAI inside Claude">
-<meta property="og:description" content="Connect ProductAI to Claude and generate product photos in chat. Trusted by 20,000+ brands and creators.">
+<meta name="description" content="ProductAI transforms your product shots into realistic, high-converting AI product photos — now inside Claude. Trusted by 20,000+ brands and creators.">
+<meta property="og:title" content="ProductAI in Claude — Accurate on-brand AI Product Photos">
+<meta property="og:description" content="ProductAI transforms your product shots into realistic, high-converting AI product photos — now inside Claude. Trusted by 20,000+ brands and creators.">
 <style>
   :root { color-scheme: light dark; }
   body {
