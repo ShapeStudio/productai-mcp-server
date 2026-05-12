@@ -1,6 +1,8 @@
 import "express-async-errors";
 import express, { type Request, type Response, type NextFunction } from "express";
 import { randomUUID } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { config } from "./config.js";
@@ -39,6 +41,9 @@ app.use(tokenRouter);
 
 // Public docs
 app.use(docsRouter);
+// Static brand assets (logo PNGs/SVG, favicon)
+const assetsDir = resolve(dirname(fileURLToPath(import.meta.url)), "..", "assets");
+app.use("/assets", express.static(assetsDir, { maxAge: "7d", immutable: false }));
 // Root → docs (so people hitting https://mcp.productai.photo/ in a browser land somewhere useful)
 app.get("/", (_req, res) => res.redirect(302, "/docs"));
 

@@ -13,5 +13,6 @@ COPY package.json package-lock.json* ./
 RUN npm install --omit=dev --no-audit --no-fund
 COPY --from=build /app/dist ./dist
 COPY docs ./docs
+COPY assets ./assets
 EXPOSE 8080
 CMD ["node", "dist/index.js"]

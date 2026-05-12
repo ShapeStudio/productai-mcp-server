@@ -10,9 +10,14 @@ export function buildMcpServer(userId: string): McpServer {
     version: "0.1.0",
     icons: [
       {
-        src: "https://create.productai.photo/icon-512.png",
+        src: "https://mcp.productai.photo/assets/logo-512.png",
         mimeType: "image/png",
         sizes: ["512x512"],
+      },
+      {
+        src: "https://mcp.productai.photo/assets/logo.svg",
+        mimeType: "image/svg+xml",
+        sizes: ["any"],
       },
     ],
   });
