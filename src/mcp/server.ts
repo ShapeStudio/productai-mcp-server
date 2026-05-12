@@ -56,23 +56,16 @@ export function buildMcpServer(userId: string): McpServer {
           productaiRequest(userId, "POST", "/api/generate", { model, image_url, prompt })
         )
       );
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(
-              {
-                count,
-                jobs: results.map((r, i) =>
-                  r.status === "fulfilled" ? { index: i, ok: true, ...(r.value as object) } : { index: i, ok: false, error: errMsg(r.reason) }
-                ),
-              },
-              null,
-              2
-            ),
-          },
-        ],
-      };
+      const lines: string[] = [`**${count} generation job${count === 1 ? "" : "s"} started** · model: \`${model}\``, ""];
+      results.forEach((r, i) => {
+        if (r.status === "fulfilled") {
+          const id = (r.value as GenStart).data?.id;
+          lines.push(`- Job ${i + 1}: id \`${id ?? "?"}\` — running. Use \`wait_for_job\` with this id to see the result.`);
+        } else {
+          lines.push(`- Job ${i + 1}: failed to start — ${errMsg(r.reason)}`);
+        }
+      });
+      return { content: [{ type: "text", text: lines.join("\n") }] };
     }
   );
 
@@ -200,7 +193,9 @@ export function buildMcpServer(userId: string): McpServer {
           })
         );
 
-        const content: ToolContent[] = [{ type: "text", text: JSON.stringify({ count, results: finals }, null, 2) }];
+        const content: ToolContent[] = [
+          { type: "text", text: renderBatchMarkdown(finals, model) },
+        ];
         if (preview) {
           for (const f of finals) {
             const url = "image_url" in f ? f.image_url : undefined;
@@ -249,12 +244,66 @@ function flatten(r: JobResult): Record<string, unknown> {
 
 async function renderJob(r: JobResult, preview: boolean): Promise<ToolContent[]> {
   const flat = flatten(r);
-  const content: ToolContent[] = [{ type: "text", text: JSON.stringify(flat, null, 2) }];
+  const content: ToolContent[] = [{ type: "text", text: renderSingleMarkdown(flat) }];
   if (preview && typeof flat.image_url === "string") {
     const img = await tryFetchImage(flat.image_url);
     if (img) content.push(img);
   }
   return content;
+}
+
+/**
+ * Build a markdown-formatted tool-result body that renders inline in
+ * Claude's chat. Embedding ![](url) in the *text* content (rather than
+ * relying on `image` content blocks, which the UI collapses to "Show
+ * Image" cards) is what gets the picture to appear directly.
+ */
+function renderSingleMarkdown(flat: Record<string, unknown>): string {
+  const status = String(flat.status ?? "UNKNOWN");
+  const url = typeof flat.image_url === "string" ? flat.image_url : null;
+  const lines: string[] = [];
+  if (status === "COMPLETED" && url) {
+    lines.push(`**Status:** ${status}`);
+    lines.push("");
+    lines.push(`![Generated product photo](${url})`);
+    lines.push("");
+    lines.push(`[Open full size](${url})`);
+  } else if (url) {
+    lines.push(`**Status:** ${status}`);
+    lines.push(`**Image:** ${url}`);
+  } else {
+    lines.push(`**Status:** ${status}`);
+  }
+  return lines.join("\n");
+}
+
+function renderBatchMarkdown(
+  finals: Array<{ index: number; status?: string; image_url?: string; error?: string; [k: string]: unknown }>,
+  model: string
+): string {
+  const lines: string[] = [];
+  const ok = finals.filter((f) => f.status === "COMPLETED" && typeof f.image_url === "string");
+  const fail = finals.filter((f) => f.status !== "COMPLETED");
+  lines.push(`**${ok.length} of ${finals.length} variants ready** · model: \`${model}\``);
+  lines.push("");
+  for (const f of finals) {
+    const idx = f.index + 1;
+    if (f.status === "COMPLETED" && typeof f.image_url === "string") {
+      lines.push(`### Variant ${idx}`);
+      lines.push(`![Variant ${idx}](${f.image_url})`);
+      lines.push(`[Open full size](${f.image_url})`);
+      lines.push("");
+    } else {
+      const reason = f.error ?? f.status ?? "unknown error";
+      lines.push(`### Variant ${idx} — ${f.status ?? "failed"}`);
+      lines.push(`_${reason}_`);
+      lines.push("");
+    }
+  }
+  if (fail.length > 0) {
+    lines.push(`_${fail.length} variant${fail.length === 1 ? "" : "s"} did not complete. Use \`get_job\` if you want to retry._`);
+  }
+  return lines.join("\n");
 }
 
 async function tryFetchImage(url: string): Promise<{ type: "image"; data: string; mimeType: string } | null> {

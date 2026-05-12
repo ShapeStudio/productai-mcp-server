@@ -105,6 +105,35 @@ product in B" requests.
 - **Upstream timeout**: the job is still running; offer to
   `wait_for_job` with the returned job ID.
 
+## Showing the result to the user
+
+Tool results come back as markdown that already contains
+`![](url)` references. **Always copy those markdown image references
+into your final response so the image renders inline** in the chat —
+don't summarise as "image generated successfully" or paste the raw
+URL on its own. The user wants to see the picture, not click through.
+
+Good final response after a 3-variant generation:
+
+```
+Here are the three variants:
+
+### Variant 1 — editorial side profile
+![Variant 1](https://trai-com.s3.../1234.png)
+
+### Variant 2 — three-quarter angle
+![Variant 2](https://trai-com.s3.../5678.png)
+
+### Variant 3 — top-down flat lay
+![Variant 3](https://trai-com.s3.../9012.png)
+
+Want me to push any of these further — warmer light,
+different marble, add a prop, hero crop?
+```
+
+Bad (do not do this): "I generated 3 variants. Click 'Show image' to
+see each one." The user already asked to see them.
+
 ## Tool inventory recap
 
 | Tool | When to call |
