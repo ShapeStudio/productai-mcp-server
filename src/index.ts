@@ -1,4 +1,5 @@
-import express from "express";
+import "express-async-errors";
+import express, { type Request, type Response, type NextFunction } from "express";
 import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
@@ -10,6 +11,14 @@ import { callbackRouter } from "./auth/callback.js";
 import { tokenRouter } from "./auth/token.js";
 import { requireBearer } from "./auth/middleware.js";
 import { buildMcpServer } from "./mcp/server.js";
+
+// Never crash the container on a stray rejection — log and keep serving.
+process.on("unhandledRejection", (reason) => {
+  console.error("[unhandledRejection]", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("[uncaughtException]", err);
+});
 
 const app = express();
 app.disable("x-powered-by");
@@ -62,6 +71,14 @@ app.all("/mcp", requireBearer, async (req, res) => {
   // Cast away the SDK's stricter IncomingMessage.auth typing — our middleware
   // already verified the bearer and we pass userId via the MCP server closure.
   await transport.handleRequest(req as never, res, req.body);
+});
+
+// Top-level error handler — surfaces the error message instead of crashing.
+app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`[error] ${req.method} ${req.path}:`, err);
+  if (res.headersSent) return;
+  res.status(500).json({ error: "server_error", error_description: msg });
 });
 
 app.listen(config.port, () => {
