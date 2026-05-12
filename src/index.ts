@@ -11,6 +11,7 @@ import { callbackRouter } from "./auth/callback.js";
 import { tokenRouter } from "./auth/token.js";
 import { requireBearer } from "./auth/middleware.js";
 import { buildMcpServer } from "./mcp/server.js";
+import { docsRouter } from "./docs.js";
 
 // Never crash the container on a stray rejection — log and keep serving.
 process.on("unhandledRejection", (reason) => {
@@ -35,6 +36,11 @@ app.use(registerRouter);
 app.use(authorizeRouter);
 app.use(callbackRouter);
 app.use(tokenRouter);
+
+// Public docs
+app.use(docsRouter);
+// Root → docs (so people hitting https://mcp.productai.photo/ in a browser land somewhere useful)
+app.get("/", (_req, res) => res.redirect(302, "/docs"));
 
 // Active MCP sessions, keyed by Mcp-Session-Id
 const sessions = new Map<string, StreamableHTTPServerTransport>();

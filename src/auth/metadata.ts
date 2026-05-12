@@ -15,7 +15,7 @@ metadataRouter.get("/.well-known/oauth-authorization-server", (_req, res) => {
     token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
     code_challenge_methods_supported: ["S256"],
     scopes_supported: ["mcp"],
-    service_documentation: "https://create.productai.photo/docs/mcp",
+    service_documentation: `${config.publicUrl}/docs`,
   });
 });
 
