@@ -1,5 +1,7 @@
 # Use ProductAI inside Claude
 
+> Trusted by **20,000+ brands and creators** generating product photos with ProductAI.
+
 Connect ProductAI to Claude (Claude.ai, Claude Desktop, or Claude Code) and generate product photos by chatting. No copying API keys, no leaving the conversation — the finished images appear inline so you can compare variants side by side.
 
 ![hero placeholder — three sneaker variants rendered inline in a Claude chat](https://create.productai.photo/docs/mcp/hero.jpg)

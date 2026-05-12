@@ -28,9 +28,9 @@ function wrap(body: string): string {
 <title>Use ProductAI inside Claude</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" type="image/svg+xml" href="https://create.productai.photo/logo-pai.svg">
-<meta name="description" content="Connect ProductAI to Claude and generate product photos in chat. The official MCP connector docs.">
+<meta name="description" content="Connect ProductAI to Claude and generate product photos in chat. Trusted by 20,000+ brands and creators.">
 <meta property="og:title" content="Use ProductAI inside Claude">
-<meta property="og:description" content="Connect ProductAI to Claude and generate product photos in chat.">
+<meta property="og:description" content="Connect ProductAI to Claude and generate product photos in chat. Trusted by 20,000+ brands and creators.">
 <style>
   :root { color-scheme: light dark; }
   body {
