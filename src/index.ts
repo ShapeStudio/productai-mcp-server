@@ -14,6 +14,7 @@ import { tokenRouter } from "./auth/token.js";
 import { requireBearer } from "./auth/middleware.js";
 import { buildMcpServer } from "./mcp/server.js";
 import { docsRouter } from "./docs.js";
+import { installRouter } from "./install.js";
 
 // Never crash the container on a stray rejection — log and keep serving.
 process.on("unhandledRejection", (reason) => {
@@ -39,8 +40,9 @@ app.use(authorizeRouter);
 app.use(callbackRouter);
 app.use(tokenRouter);
 
-// Public docs
+// Public docs + one-page install landing
 app.use(docsRouter);
+app.use(installRouter);
 // Static brand assets (logo PNGs/SVG, favicon)
 const assetsDir = resolve(dirname(fileURLToPath(import.meta.url)), "..", "assets");
 app.use("/assets", express.static(assetsDir, { maxAge: "7d", immutable: false }));
