@@ -1,4 +1,6 @@
 import "express-async-errors";
+// Sentry must be imported (and init'd) BEFORE express to auto-instrument it.
+import { log, sentryEnabled, setUserContext, captureError, Sentry } from "./observability.js";
 import express, { type Request, type Response, type NextFunction } from "express";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -16,12 +18,12 @@ import { buildMcpServer } from "./mcp/server.js";
 import { docsRouter } from "./docs.js";
 import { installRouter } from "./install.js";
 
-// Never crash the container on a stray rejection — log and keep serving.
+// Never crash the container on a stray rejection — log + capture + keep serving.
 process.on("unhandledRejection", (reason) => {
-  console.error("[unhandledRejection]", reason);
+  captureError(reason, { kind: "unhandledRejection" });
 });
 process.on("uncaughtException", (err) => {
-  console.error("[uncaughtException]", err);
+  captureError(err, { kind: "uncaughtException" });
 });
 
 const app = express();
@@ -54,6 +56,7 @@ const sessions = new Map<string, StreamableHTTPServerTransport>();
 
 app.all("/mcp", requireBearer, async (req, res) => {
   const userId = req.mcpAuth!.sub;
+  setUserContext(req.mcpAuth!);
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
   let transport: StreamableHTTPServerTransport | undefined = sessionId ? sessions.get(sessionId) : undefined;
@@ -86,14 +89,20 @@ app.all("/mcp", requireBearer, async (req, res) => {
   await transport.handleRequest(req as never, res, req.body);
 });
 
+// Sentry's express request handler is auto-installed via expressIntegration().
+// Add its error handler before our own so it can capture errors first.
+if (sentryEnabled) {
+  Sentry.setupExpressErrorHandler(app);
+}
+
 // Top-level error handler — surfaces the error message instead of crashing.
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   const msg = err instanceof Error ? err.message : String(err);
-  console.error(`[error] ${req.method} ${req.path}:`, err);
+  log.error({ err, method: req.method, path: req.path }, "request failed");
   if (res.headersSent) return;
   res.status(500).json({ error: "server_error", error_description: msg });
 });
 
 app.listen(config.port, () => {
-  console.log(`[productai-mcp] listening on :${config.port} (public: ${config.publicUrl})`);
+  log.info({ port: config.port, publicUrl: config.publicUrl, sentry: sentryEnabled }, "productai-mcp listening");
 });

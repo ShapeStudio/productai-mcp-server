@@ -46,3 +46,9 @@ services:
       - key: OAUTH_JWT_SECRET
         scope: RUN_TIME
         type: SECRET
+      - key: SENTRY_DSN
+        scope: RUN_TIME
+        type: SECRET
+      - key: LOG_LEVEL
+        scope: RUN_TIME
+        value: info
