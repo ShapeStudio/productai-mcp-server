@@ -1,6 +1,18 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { MODELS, productaiRequest } from "../productai.js";
+import {
+  MODELS,
+  VIDEO_MODEL,
+  VIDEO_RESOLUTIONS,
+  VIDEO_ASPECT_RATIOS,
+  productaiRequest,
+} from "../productai.js";
+
+/** A result URL that points at a video file rather than a still image. */
+function isVideoUrl(url: string): boolean {
+  const path = url.split("?")[0]?.toLowerCase() ?? "";
+  return /\.(mp4|webm|mov|m4v)$/.test(path);
+}
 
 const MAX_COUNT = 4;
 
@@ -38,9 +50,9 @@ export function buildMcpServer(userId: string): McpServer {
       inputSchema: {
         image_url: z
           .union([z.string().url(), z.array(z.string().url())])
-          .describe("URL of the product image, or an array of URLs for multi-image models (seedream, nanobanana)"),
+          .describe("URL of the product image, or an array of URLs (up to 14) for multi-image models (seedream, nanobananapro, nanobanana, nanobanana2)"),
         prompt: z.string().describe("Text prompt describing the desired product photo"),
-        model: z.enum(MODELS).default("nanobananapro").describe(`Model. Default: nanobananapro`),
+        model: z.enum(MODELS).default("nanobananapro").describe(`Model. Default: nanobananapro. For video use the separate generate_video tool.`),
         count: z
           .number()
           .int()
@@ -199,7 +211,7 @@ export function buildMcpServer(userId: string): McpServer {
         if (preview) {
           for (const f of finals) {
             const url = "image_url" in f ? f.image_url : undefined;
-            if (typeof url === "string") {
+            if (typeof url === "string" && !isVideoUrl(url)) {
               const img = await tryFetchImage(url);
               if (img) content.push(img);
             }
@@ -208,6 +220,63 @@ export function buildMcpServer(userId: string): McpServer {
         return { content };
       } catch (err) {
         return { isError: true, content: [{ type: "text", text: `Generation failed: ${errMsg(err)}` }] };
+      }
+    }
+  );
+
+  server.registerTool(
+    "generate_video",
+    {
+      title: "Generate product video (Seedance 2.0)",
+      description:
+        "Start a Seedance 2.0 video generation. Give a prompt (required) and, optionally, one or more reference images (up to 9) to animate a product — omit the image for text-to-video. Video jobs run for a few minutes and are billed per second of output scaled by resolution (e.g. a 5s 720p clip ≈ 35 credits; 1080p and 4k cost much more). Returns a job id — use `wait_for_job` (raise max_wait_seconds) or `get_job` to fetch the finished video URL.",
+      annotations: {
+        title: "Generate product video (Seedance 2.0)",
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+      inputSchema: {
+        prompt: z.string().describe("Text prompt describing the video to generate"),
+        image_url: z
+          .union([z.string().url(), z.array(z.string().url())])
+          .optional()
+          .describe("Optional reference image(s). Omit for text-to-video; pass one URL or an array (up to 9) for reference-to-video."),
+        resolution: z
+          .enum(VIDEO_RESOLUTIONS)
+          .default("720p")
+          .describe("Output resolution. Higher resolution costs more credits per second."),
+        aspect_ratio: z.enum(VIDEO_ASPECT_RATIOS).default("auto"),
+        duration: z
+          .union([z.number().int().min(4).max(15), z.literal("auto")])
+          .default("auto")
+          .describe('Clip length in seconds (4-15) or "auto".'),
+        generate_audio: z.boolean().default(true).describe("Whether to generate an audio track."),
+      },
+    },
+    async ({ prompt, image_url, resolution, aspect_ratio, duration, generate_audio }) => {
+      try {
+        const body: Record<string, unknown> = {
+          model: VIDEO_MODEL,
+          prompt,
+          resolution,
+          aspect_ratio,
+          duration,
+          generate_audio,
+        };
+        if (image_url !== undefined) body.image_url = image_url;
+        const res = (await productaiRequest(userId, "POST", "/api/generate-video", body)) as GenStart;
+        const id = res.data?.id;
+        const durLabel = typeof duration === "number" ? ` · ${duration}s` : "";
+        const lines = [
+          `**Video generation started** · model: \`${VIDEO_MODEL}\` · ${resolution}${durLabel}`,
+          "",
+          `- Job id \`${id ?? "?"}\` — running. Video takes a few minutes; use \`wait_for_job\` (raise max_wait_seconds) or \`get_job\` with this id to fetch the finished video.`,
+        ];
+        return { content: [{ type: "text", text: lines.join("\n") }] };
+      } catch (err) {
+        return { isError: true, content: [{ type: "text", text: `Video generation failed: ${errMsg(err)}` }] };
       }
     }
   );
@@ -245,7 +314,7 @@ function flatten(r: JobResult): Record<string, unknown> {
 async function renderJob(r: JobResult, preview: boolean): Promise<ToolContent[]> {
   const flat = flatten(r);
   const content: ToolContent[] = [{ type: "text", text: renderSingleMarkdown(flat) }];
-  if (preview && typeof flat.image_url === "string") {
+  if (preview && typeof flat.image_url === "string" && !isVideoUrl(flat.image_url)) {
     const img = await tryFetchImage(flat.image_url);
     if (img) content.push(img);
   }
@@ -262,7 +331,11 @@ function renderSingleMarkdown(flat: Record<string, unknown>): string {
   const status = String(flat.status ?? "UNKNOWN");
   const url = typeof flat.image_url === "string" ? flat.image_url : null;
   const lines: string[] = [];
-  if (status === "COMPLETED" && url) {
+  if (status === "COMPLETED" && url && isVideoUrl(url)) {
+    lines.push(`**Status:** ${status}`);
+    lines.push("");
+    lines.push(`🎬 [Watch / download video](${url})`);
+  } else if (status === "COMPLETED" && url) {
     lines.push(`**Status:** ${status}`);
     lines.push("");
     lines.push(`![Generated product photo](${url})`);
@@ -288,7 +361,11 @@ function renderBatchMarkdown(
   lines.push("");
   for (const f of finals) {
     const idx = f.index + 1;
-    if (f.status === "COMPLETED" && typeof f.image_url === "string") {
+    if (f.status === "COMPLETED" && typeof f.image_url === "string" && isVideoUrl(f.image_url)) {
+      lines.push(`### Variant ${idx}`);
+      lines.push(`🎬 [Watch / download video](${f.image_url})`);
+      lines.push("");
+    } else if (f.status === "COMPLETED" && typeof f.image_url === "string") {
       lines.push(`### Variant ${idx}`);
       lines.push(`![Variant ${idx}](${f.image_url})`);
       lines.push(`[Open full size](${f.image_url})`);

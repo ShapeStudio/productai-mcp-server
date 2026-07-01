@@ -1,7 +1,10 @@
 import { config } from "./config.js";
 import { query } from "./db.js";
 
+// Image models — POST /api/generate
 export const MODELS = [
+  "gpt-2",
+  "gpt-1.5",
   "gpt-low",
   "gpt-medium",
   "gpt-high",
@@ -9,10 +12,16 @@ export const MODELS = [
   "kontext-max",
   "nanobananapro",
   "nanobanana",
+  "nanobanana2",
   "seedream",
 ] as const;
 
 export type Model = (typeof MODELS)[number];
+
+// Video generation — POST /api/generate-video (Seedance 2.0)
+export const VIDEO_MODEL = "seedance" as const;
+export const VIDEO_RESOLUTIONS = ["480p", "720p", "1080p", "4k"] as const;
+export const VIDEO_ASPECT_RATIOS = ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 
 const API_KEY_NAME = (userId: string) => `Claude MCP (#${userId})`;
 const API_KEY_LEN = 32;

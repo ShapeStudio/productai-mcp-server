@@ -57,9 +57,11 @@ You don't normally call these by name — just describe what you want and Claude
 
 ## Models available
 
-`nanobananapro` (default, best quality), `gpt-low`, `gpt-medium`, `gpt-high`, `kontext-pro`, `kontext-max`, `nanobanana`, `seedream`.
+**Image** (`generate_image` / `generate_and_wait`): `nanobananapro` (default, best quality), `gpt-2`, `gpt-1.5`, `gpt-low`, `gpt-medium`, `gpt-high`, `kontext-pro`, `kontext-max`, `nanobanana`, `nanobanana2`, `seedream`.
 
-Multi-image input (passing several reference photos in one call) works with `seedream` and `nanobanana`.
+Multi-image input (passing several reference photos in one call, up to 14) works with `seedream`, `nanobananapro`, `nanobanana`, and `nanobanana2`.
+
+**Video** (`generate_video`): Seedance 2.0. Give a prompt and, optionally, one or more reference images (up to 9) to animate a product — omit the image for text-to-video. Options: `resolution` (480p/720p/1080p/4k), `aspect_ratio`, `duration` (4–15s or auto), `generate_audio`. It returns a short **video** (a video URL, not a still) and takes a few minutes, so start it and check back with `wait_for_job` or `get_job`. Billed per second of output scaled by resolution (e.g. a 5s 720p clip ≈ 35 credits).
 
 ## Credits, billing, and limits
 
