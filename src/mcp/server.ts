@@ -19,7 +19,7 @@ const MAX_COUNT = 4;
 export function buildMcpServer(userId: string): McpServer {
   const server = new McpServer({
     name: "productai",
-    version: "0.1.0",
+    version: "0.2.0",
     icons: [
       {
         src: "https://mcp.productai.photo/assets/logo-512.png",
