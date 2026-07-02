@@ -36,6 +36,7 @@ We are the OAuth provider exposed to Claude (with RFC 7591 Dynamic Client Regist
 
 | Tool | Read-only? | Description |
 |---|---|---|
+| `upload_asset` | no | Upload a reference image (base64 or URL) → hosted URL |
 | `generate_image` | no | Start an image generation job |
 | `generate_and_wait` | no | Generate image(s) + poll until complete |
 | `generate_video` | no | Start a Seedance 2.0 video job (text- or image-to-video) |

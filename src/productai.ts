@@ -113,3 +113,38 @@ export async function productaiRequest(
   }
   return response.json();
 }
+
+export const UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+export const UPLOAD_MIME_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/webp": "webp",
+};
+
+/**
+ * Upload raw image bytes to /api/upload-asset (multipart/form-data) and return
+ * the hosted-URL response. Content-Type is intentionally left unset so fetch
+ * adds the multipart boundary itself.
+ */
+export async function productaiUpload(
+  userId: string,
+  bytes: Uint8Array,
+  mimeType: string,
+  filename: string
+): Promise<unknown> {
+  const apiKey = await ensureApiKey(userId);
+  const url = `${config.productaiApiBase}/api/upload-asset`;
+  const form = new FormData();
+  form.append("file", new Blob([bytes as unknown as BlobPart], { type: mimeType }), filename);
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "x-api-key": apiKey },
+    body: form,
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`ProductAI API error (${response.status}): ${text}`);
+  }
+  return response.json();
+}

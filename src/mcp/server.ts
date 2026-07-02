@@ -5,7 +5,10 @@ import {
   VIDEO_MODEL,
   VIDEO_RESOLUTIONS,
   VIDEO_ASPECT_RATIOS,
+  UPLOAD_MAX_BYTES,
+  UPLOAD_MIME_EXT,
   productaiRequest,
+  productaiUpload,
 } from "../productai.js";
 
 /** A result URL that points at a video file rather than a still image. */
@@ -33,6 +36,83 @@ export function buildMcpServer(userId: string): McpServer {
       },
     ],
   });
+
+  server.registerTool(
+    "upload_asset",
+    {
+      title: "Upload a reference image",
+      description:
+        "Upload a reference image to ProductAI and get back a hosted URL you can pass as `image_url` to generate_image, generate_and_wait, or generate_video. Use this when the user attaches or provides an image that isn't already a public URL — pass its base64 bytes as `data`. Alternatively pass `source_url` to re-host an image from an existing URL. Max 10MB; PNG, JPG, or WebP only.",
+      annotations: {
+        title: "Upload a reference image",
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+      inputSchema: {
+        data: z
+          .string()
+          .optional()
+          .describe("Base64-encoded image bytes (no data: prefix). Provide this OR source_url."),
+        mime_type: z
+          .enum(["image/png", "image/jpeg", "image/webp"])
+          .optional()
+          .describe("MIME type of the image in `data`. Required when using `data`."),
+        source_url: z
+          .string()
+          .url()
+          .optional()
+          .describe("URL of an image to fetch and re-host. Provide this OR data."),
+      },
+    },
+    async ({ data, mime_type, source_url }) => {
+      try {
+        let bytes: Uint8Array;
+        let mimeType: string;
+        if (data) {
+          if (!mime_type) {
+            return { isError: true, content: [{ type: "text", text: "mime_type is required when uploading base64 `data`." }] };
+          }
+          bytes = Buffer.from(data, "base64");
+          mimeType = mime_type;
+        } else if (source_url) {
+          const res = await fetch(source_url);
+          if (!res.ok) {
+            return { isError: true, content: [{ type: "text", text: `Could not fetch source_url (${res.status}).` }] };
+          }
+          mimeType = res.headers.get("content-type")?.split(";")[0]?.trim() ?? mimeFromUrl(source_url);
+          bytes = new Uint8Array(await res.arrayBuffer());
+        } else {
+          return { isError: true, content: [{ type: "text", text: "Provide either `data` (base64) + `mime_type`, or `source_url`." }] };
+        }
+
+        const ext = UPLOAD_MIME_EXT[mimeType.toLowerCase()];
+        if (!ext) {
+          return { isError: true, content: [{ type: "text", text: `Unsupported image type \`${mimeType}\`. Use PNG, JPG, or WebP.` }] };
+        }
+        if (bytes.byteLength > UPLOAD_MAX_BYTES) {
+          return {
+            isError: true,
+            content: [{ type: "text", text: `Image is ${(bytes.byteLength / (1024 * 1024)).toFixed(1)}MB — the limit is 10MB.` }],
+          };
+        }
+
+        const result = (await productaiUpload(userId, bytes, mimeType, `upload.${ext}`)) as UploadResult;
+        const url = result.data?.image_url;
+        if (!url) {
+          return { isError: true, content: [{ type: "text", text: "Upload succeeded but no URL was returned." }] };
+        }
+        return {
+          content: [
+            { type: "text", text: `**Uploaded** · \`${url}\`\n\nPass this as \`image_url\` to generate_image, generate_and_wait, or generate_video.` },
+          ],
+        };
+      } catch (err) {
+        return { isError: true, content: [{ type: "text", text: `Upload failed: ${errMsg(err)}` }] };
+      }
+    }
+  );
 
   server.registerTool(
     "generate_image",
@@ -292,6 +372,9 @@ type ToolContent =
 
 interface GenStart {
   data?: { id?: number };
+}
+interface UploadResult {
+  data?: { id?: number; image_url?: string; mimetype?: string };
 }
 interface JobResult {
   status?: string;
