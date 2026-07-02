@@ -18,10 +18,20 @@ export const MODELS = [
 
 export type Model = (typeof MODELS)[number];
 
-// Video generation — POST /api/generate-video (Seedance 2.0)
-export const VIDEO_MODEL = "seedance" as const;
+// Video generation — POST /api/generate-video
+// - seedance     (Seedance 2.0): text-to-video or reference-to-video, billed by resolution × duration
+// - gemini-omni  (Gemini Omni Flash): reference-to-video only, billed by duration
+export const VIDEO_MODELS = ["seedance", "gemini-omni"] as const;
+export type VideoModel = (typeof VIDEO_MODELS)[number];
+export const VIDEO_MODEL = "seedance" as const; // default
 export const VIDEO_RESOLUTIONS = ["480p", "720p", "1080p", "4k"] as const;
 export const VIDEO_ASPECT_RATIOS = ["auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
+
+// Gemini Omni Flash constraints (reference-to-video only).
+export const GEMINI_OMNI_ASPECT_RATIOS = ["16:9", "9:16"] as const;
+export const GEMINI_OMNI_MIN_DURATION = 3;
+export const GEMINI_OMNI_MAX_DURATION = 10;
+export const GEMINI_OMNI_DEFAULT_DURATION = 8;
 
 const API_KEY_NAME = (userId: string) => `Claude MCP (#${userId})`;
 const API_KEY_LEN = 32;

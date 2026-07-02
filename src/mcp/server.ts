@@ -3,8 +3,13 @@ import { z } from "zod";
 import {
   MODELS,
   VIDEO_MODEL,
+  VIDEO_MODELS,
   VIDEO_RESOLUTIONS,
   VIDEO_ASPECT_RATIOS,
+  GEMINI_OMNI_ASPECT_RATIOS,
+  GEMINI_OMNI_MIN_DURATION,
+  GEMINI_OMNI_MAX_DURATION,
+  GEMINI_OMNI_DEFAULT_DURATION,
   UPLOAD_MAX_BYTES,
   UPLOAD_MIME_EXT,
   productaiRequest,
@@ -307,11 +312,14 @@ export function buildMcpServer(userId: string): McpServer {
   server.registerTool(
     "generate_video",
     {
-      title: "Generate product video (Seedance 2.0)",
+      title: "Generate product video",
       description:
-        "Start a Seedance 2.0 video generation. Give a prompt (required) and, optionally, one or more reference images (up to 9) to animate a product — omit the image for text-to-video. Video jobs run for a few minutes and are billed per second of output scaled by resolution (e.g. a 5s 720p clip ≈ 35 credits; 1080p and 4k cost much more). Returns a job id — use `wait_for_job` (raise max_wait_seconds) or `get_job` to fetch the finished video URL.",
+        "Start a product video generation. Give a prompt (required) and choose a `model`:\n" +
+        "- `seedance` (Seedance 2.0, default): text-to-video or reference-to-video. Optionally pass one or more reference images (up to 9) to animate a product, or omit the image for text-to-video. Supports `resolution`, any `aspect_ratio`, `duration` 4-15s or \"auto\", and `generate_audio`. Billed per second scaled by resolution (e.g. a 5s 720p clip ≈ 35 credits; 1080p/4k cost much more).\n" +
+        "- `gemini-omni` (Gemini Omni Flash): reference-to-video only — `image_url` is REQUIRED. Only `aspect_ratio` (16:9 or 9:16) and `duration` (3-10s, default 8) apply; `resolution` and `generate_audio` are ignored. Billed per second (~3 credits/s, e.g. 8s ≈ 24 credits).\n" +
+        "Video jobs run for a few minutes. Returns a job id — use `wait_for_job` (raise max_wait_seconds) or `get_job` to fetch the finished video URL.",
       annotations: {
-        title: "Generate product video (Seedance 2.0)",
+        title: "Generate product video",
         readOnlyHint: false,
         destructiveHint: false,
         idempotentHint: false,
@@ -319,38 +327,76 @@ export function buildMcpServer(userId: string): McpServer {
       },
       inputSchema: {
         prompt: z.string().describe("Text prompt describing the video to generate"),
+        model: z
+          .enum(VIDEO_MODELS)
+          .default(VIDEO_MODEL)
+          .describe("Video model. `seedance` (default) or `gemini-omni` (reference-to-video only, requires image_url)."),
         image_url: z
           .union([z.string().url(), z.array(z.string().url())])
           .optional()
-          .describe("Optional reference image(s). Omit for text-to-video; pass one URL or an array (up to 9) for reference-to-video."),
+          .describe("Reference image(s). Required for gemini-omni. For seedance: omit for text-to-video, or pass one URL / an array (up to 9) for reference-to-video."),
         resolution: z
           .enum(VIDEO_RESOLUTIONS)
           .default("720p")
-          .describe("Output resolution. Higher resolution costs more credits per second."),
-        aspect_ratio: z.enum(VIDEO_ASPECT_RATIOS).default("auto"),
-        duration: z
-          .union([z.number().int().min(4).max(15), z.literal("auto")])
+          .describe("Output resolution (seedance only). Higher resolution costs more credits per second."),
+        aspect_ratio: z
+          .enum(VIDEO_ASPECT_RATIOS)
           .default("auto")
-          .describe('Clip length in seconds (4-15) or "auto".'),
-        generate_audio: z.boolean().default(true).describe("Whether to generate an audio track."),
+          .describe("Aspect ratio. seedance accepts any value; gemini-omni supports only 16:9 or 9:16 (other values fall back to 16:9)."),
+        duration: z
+          .union([z.number().int().min(3).max(15), z.literal("auto")])
+          .default("auto")
+          .describe('Clip length in seconds. seedance: 4-15 or "auto". gemini-omni: 3-10 (default 8).'),
+        generate_audio: z.boolean().default(true).describe("Whether to generate an audio track (seedance only)."),
       },
     },
-    async ({ prompt, image_url, resolution, aspect_ratio, duration, generate_audio }) => {
+    async ({ prompt, model, image_url, resolution, aspect_ratio, duration, generate_audio }) => {
       try {
-        const body: Record<string, unknown> = {
-          model: VIDEO_MODEL,
-          prompt,
-          resolution,
-          aspect_ratio,
-          duration,
-          generate_audio,
-        };
-        if (image_url !== undefined) body.image_url = image_url;
+        let body: Record<string, unknown>;
+        let infoLabel: string;
+
+        if (model === "gemini-omni") {
+          // Reference-to-video only — image is required.
+          if (image_url === undefined || (Array.isArray(image_url) && image_url.length === 0)) {
+            return {
+              isError: true,
+              content: [{ type: "text", text: "gemini-omni is reference-to-video only — `image_url` is required." }],
+            };
+          }
+          // Normalize to the model's constraints (16:9/9:16, 3-10s).
+          const geminiAspect = (GEMINI_OMNI_ASPECT_RATIOS as readonly string[]).includes(aspect_ratio)
+            ? aspect_ratio
+            : "16:9";
+          const geminiDuration =
+            typeof duration === "number"
+              ? Math.min(GEMINI_OMNI_MAX_DURATION, Math.max(GEMINI_OMNI_MIN_DURATION, duration))
+              : GEMINI_OMNI_DEFAULT_DURATION;
+          body = {
+            model,
+            prompt,
+            image_url,
+            aspect_ratio: geminiAspect,
+            duration: geminiDuration,
+          };
+          infoLabel = `model: \`${model}\` · ${geminiAspect} · ${geminiDuration}s`;
+        } else {
+          body = {
+            model: VIDEO_MODEL,
+            prompt,
+            resolution,
+            aspect_ratio,
+            duration,
+            generate_audio,
+          };
+          if (image_url !== undefined) body.image_url = image_url;
+          const durLabel = typeof duration === "number" ? ` · ${duration}s` : "";
+          infoLabel = `model: \`${VIDEO_MODEL}\` · ${resolution}${durLabel}`;
+        }
+
         const res = (await productaiRequest(userId, "POST", "/api/generate-video", body)) as GenStart;
         const id = res.data?.id;
-        const durLabel = typeof duration === "number" ? ` · ${duration}s` : "";
         const lines = [
-          `**Video generation started** · model: \`${VIDEO_MODEL}\` · ${resolution}${durLabel}`,
+          `**Video generation started** · ${infoLabel}`,
           "",
           `- Job id \`${id ?? "?"}\` — running. Video takes a few minutes; use \`wait_for_job\` (raise max_wait_seconds) or \`get_job\` with this id to fetch the finished video.`,
         ];
