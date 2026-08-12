@@ -31,7 +31,7 @@ app.disable("x-powered-by");
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-const VERSION = "0.2.0-seedance-video";
+const VERSION = "0.3.0-upload-integrity";
 app.get("/healthz", (_req, res) => {
   res.json({ ok: true, name: "productai-mcp-server", version: VERSION });
 });
