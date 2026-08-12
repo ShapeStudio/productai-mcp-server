@@ -17,6 +17,10 @@ You stay in Claude the whole time.
 
 ## One-time setup (under a minute)
 
+Fastest: click [**Add to Claude**](https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=ProductAI&connectorUrl=https%3A%2F%2Fmcp.productai.photo%2Fmcp) — Claude opens with the connector pre-filled. Confirm, sign in, done.
+
+Or add it manually:
+
 1. Open **Settings → Connectors → Add custom connector** in Claude.
 2. Server URL:
    ```
