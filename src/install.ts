@@ -5,12 +5,16 @@ export const installRouter = Router();
 
 const MCP_URL = (publicUrl: string) => `${publicUrl}/mcp`;
 
+const ADD_TO_CLAUDE_URL = (mcpUrl: string) =>
+  `https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=ProductAI&connectorUrl=${encodeURIComponent(mcpUrl)}`;
+
 installRouter.get("/install", (_req, res) => {
   const mcpUrl = MCP_URL(config.publicUrl);
   res.type("html").send(renderInstallPage(mcpUrl));
 });
 
 function renderInstallPage(mcpUrl: string): string {
+  const addToClaudeUrl = ADD_TO_CLAUDE_URL(mcpUrl);
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -103,23 +107,29 @@ function renderInstallPage(mcpUrl: string): string {
     </div>
   </header>
 
-  <p>Claude doesn't yet support one-click MCP installs from a button. Copy the URL below and follow the steps — under 60 seconds.</p>
+  <p>One click, under 60 seconds. The button opens Claude with the ProductAI connector pre-filled — just confirm and sign in.</p>
 
-  <div class="url-card">
-    <code id="mcp-url">${escapeHtml(mcpUrl)}</code>
-    <button class="copy" id="copy">Copy</button>
-  </div>
-
-  <a class="cta" href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">Open Claude Connectors</a>
+  <a class="cta" href="${escapeHtml(addToClaudeUrl)}" target="_blank" rel="noopener">Add to Claude</a>
   <a class="cta secondary" href="/docs">Full docs</a>
 
   <h2>Steps</h2>
   <ol>
-    <li>Open <a href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">Settings → Connectors</a> in Claude.</li>
-    <li>Click <strong>Add custom connector</strong>.</li>
-    <li>Paste the URL above into the Server URL field and click <strong>Connect</strong>.</li>
+    <li>Click <strong>Add to Claude</strong> — Claude opens with the connector name and server URL pre-filled.</li>
+    <li>Click <strong>Add</strong>, then <strong>Connect</strong>.</li>
     <li>Sign in with your <a href="https://create.productai.photo" target="_blank" rel="noopener">ProductAI</a> account when the Auth0 window appears.</li>
     <li>You're connected — ask Claude to generate a product photo.</li>
+  </ol>
+
+  <h2>Manual setup</h2>
+  <p>Prefer to add it yourself? Copy the server URL:</p>
+  <div class="url-card">
+    <code id="mcp-url">${escapeHtml(mcpUrl)}</code>
+    <button class="copy" id="copy">Copy</button>
+  </div>
+  <ol>
+    <li>Open <a href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">Settings → Connectors</a> in Claude.</li>
+    <li>Click <strong>Add custom connector</strong>, paste the URL into the Server URL field, and click <strong>Connect</strong>.</li>
+    <li>Sign in with your ProductAI account when prompted.</li>
   </ol>
 
   <h2>Claude Code (CLI)</h2>
