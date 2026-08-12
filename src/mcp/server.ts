@@ -11,10 +11,10 @@ import {
   GEMINI_OMNI_MAX_DURATION,
   GEMINI_OMNI_DEFAULT_DURATION,
   UPLOAD_MAX_BYTES,
-  UPLOAD_MIME_EXT,
   productaiRequest,
   productaiUpload,
 } from "../productai.js";
+import { prepareUpload } from "../upload-validation.js";
 
 /** A result URL that points at a video file rather than a still image. */
 function isVideoUrl(url: string): boolean {
@@ -47,7 +47,11 @@ export function buildMcpServer(userId: string): McpServer {
     {
       title: "Upload a reference image",
       description:
-        "Upload a reference image to ProductAI and get back a hosted URL you can pass as `image_url` to generate_image, generate_and_wait, or generate_video. Use this when the user attaches or provides an image that isn't already a public URL — pass its base64 bytes as `data`. Alternatively pass `source_url` to re-host an image from an existing URL. Max 10MB; PNG, JPG, or WebP only.",
+        "Upload a reference image to ProductAI and get back a hosted URL you can pass as `image_url` to generate_image, generate_and_wait, or generate_video. " +
+        "If the image is already at a URL, always prefer `source_url` — the server fetches the bytes directly and nothing can mangle them. " +
+        "Only pass base64 `data` when no URL exists (e.g. a chat attachment), and pair it with `sha256` computed at the source whenever you can (e.g. `shasum -a 256 <file>`): " +
+        "long base64 strings reproduced in a conversation can arrive subtly corrupted, and the digest lets the server refuse a mangled payload instead of hosting a broken image. " +
+        "Max 10MB; PNG, JPG, or WebP only.",
       annotations: {
         title: "Upload a reference image",
         readOnlyHint: false,
@@ -68,34 +72,37 @@ export function buildMcpServer(userId: string): McpServer {
           .string()
           .url()
           .optional()
-          .describe("URL of an image to fetch and re-host. Provide this OR data."),
+          .describe("URL of an image to fetch and re-host. Provide this OR data. Prefer this over `data` whenever the image is already reachable by URL."),
+        sha256: z
+          .string()
+          .regex(/^[0-9a-fA-F]{64}$/)
+          .optional()
+          .describe(
+            "SHA-256 hex digest of the exact file bytes, computed at the source (e.g. `shasum -a 256 <file>`). Strongly recommended with base64 `data`: the upload is refused if the decoded bytes don't match, which catches payloads corrupted in transit."
+          ),
       },
     },
-    async ({ data, mime_type, source_url }) => {
+    async ({ data, mime_type, source_url, sha256 }) => {
       try {
         let bytes: Uint8Array;
-        let mimeType: string;
+        let declaredMime: string | null;
         if (data) {
           if (!mime_type) {
             return { isError: true, content: [{ type: "text", text: "mime_type is required when uploading base64 `data`." }] };
           }
           bytes = Buffer.from(data, "base64");
-          mimeType = mime_type;
+          declaredMime = mime_type;
         } else if (source_url) {
           const res = await fetch(source_url);
           if (!res.ok) {
             return { isError: true, content: [{ type: "text", text: `Could not fetch source_url (${res.status}).` }] };
           }
-          mimeType = res.headers.get("content-type")?.split(";")[0]?.trim() ?? mimeFromUrl(source_url);
+          declaredMime = res.headers.get("content-type")?.split(";")[0]?.trim() ?? mimeFromUrl(source_url);
           bytes = new Uint8Array(await res.arrayBuffer());
         } else {
           return { isError: true, content: [{ type: "text", text: "Provide either `data` (base64) + `mime_type`, or `source_url`." }] };
         }
 
-        const ext = UPLOAD_MIME_EXT[mimeType.toLowerCase()];
-        if (!ext) {
-          return { isError: true, content: [{ type: "text", text: `Unsupported image type \`${mimeType}\`. Use PNG, JPG, or WebP.` }] };
-        }
         if (bytes.byteLength > UPLOAD_MAX_BYTES) {
           return {
             isError: true,
@@ -103,14 +110,37 @@ export function buildMcpServer(userId: string): McpServer {
           };
         }
 
-        const result = (await productaiUpload(userId, bytes, mimeType, `upload.${ext}`)) as UploadResult;
+        // Magic-byte sniff + optional caller digest. The sniffed format wins
+        // over a wrong mime_type; a digest mismatch refuses the upload
+        // outright (see upload-validation.ts for the incident behind this).
+        const prepared = prepareUpload(bytes, declaredMime, sha256);
+        if (!prepared.ok) {
+          return { isError: true, content: [{ type: "text", text: prepared.error }] };
+        }
+
+        const result = (await productaiUpload(userId, bytes, prepared.mimeType, `upload.${prepared.ext}`)) as UploadResult;
         const url = result.data?.image_url;
         if (!url) {
           return { isError: true, content: [{ type: "text", text: "Upload succeeded but no URL was returned." }] };
         }
+        // The API echoes the digest of what it hosted; surface a mismatch
+        // loudly if the payload changed between here and the bucket.
+        const serverSha = result.data?.sha256;
+        const digestNote =
+          typeof serverSha === "string" && serverSha.length > 0
+            ? serverSha === prepared.sha256
+              ? " · server verified"
+              : `\n\n⚠️ Server hosted different bytes than were sent (sha256 \`${serverSha}\`) — do not use this URL; retry the upload.`
+            : "";
         return {
           content: [
-            { type: "text", text: `**Uploaded** · \`${url}\`\n\nPass this as \`image_url\` to generate_image, generate_and_wait, or generate_video.` },
+            {
+              type: "text",
+              text:
+                `**Uploaded** · \`${url}\`\n\n` +
+                `${prepared.byteLength} bytes · sha256 \`${prepared.sha256}\`${digestNote}\n\n` +
+                `Pass this as \`image_url\` to generate_image, generate_and_wait, or generate_video.`,
+            },
           ],
         };
       } catch (err) {
@@ -420,7 +450,7 @@ interface GenStart {
   data?: { id?: number };
 }
 interface UploadResult {
-  data?: { id?: number; image_url?: string; mimetype?: string };
+  data?: { id?: number; image_url?: string; mimetype?: string; sha256?: string; byte_size?: number };
 }
 interface JobResult {
   status?: string;
