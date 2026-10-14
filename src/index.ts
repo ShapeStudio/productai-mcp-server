@@ -36,6 +36,11 @@ app.get("/healthz", (_req, res) => {
   res.json({ ok: true, name: "productai-mcp-server", version: VERSION });
 });
 
+// OpenAI Apps (ChatGPT) domain verification for the app submission
+app.get("/.well-known/openai-apps-challenge", (_req, res) => {
+  res.type("text/plain").send("nnqZvG4fxyTBqndV2iOxzexcKryS8LLrww0gJ-Qq67I");
+});
+
 // OAuth 2.1 surface
 app.use(metadataRouter);
 app.use(registerRouter);
