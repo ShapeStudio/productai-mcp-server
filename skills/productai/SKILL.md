@@ -95,8 +95,8 @@ turn — don't just hand the user a job ID and stop.
 ## When the user supplies several reference images
 
 Switch the model to `seedream` (or `nanobanana`, `nanobanana2.1`,
-`gpt-2.5`) and pass `image_url` as an array of up to 5 URLs. Use this for "combine the look of A with the
-product in B" requests.
+`gpt-2.5`) and pass `image_url` as an array of up to 5 URLs. Use
+this for "combine the look of A with the product in B" requests.
 
 ## Errors and edge cases
 
