@@ -38,16 +38,16 @@ general image model.
 
 | User goal | Model |
 |---|---|
-| Photoreal re-shoot of a product (default) | `nanobananapro` |
+| Photoreal re-shoot of a product (default) | `nanobanana2.1` |
+| Highest-quality re-shoot, cost matters less | `nanobananapro` |
 | Edit an existing image (add/remove/swap elements, recolour) | `kontext-pro` |
 | Small precise edit that must keep the product untouched | `gpt-2.5-precise` |
 | Highest-fidelity / complex edits | `kontext-max` |
 | Compose from 2–5 reference images | `seedream`, `nanobanana` or `nanobanana2.1` |
-| Cheaper Nano Banana | `nanobanana2.1` |
 | Quick low-cost draft | `gpt-low` or `gpt-medium` |
 | Best GPT model | `gpt-2.5` |
 
-Default to `nanobananapro` unless the user explicitly wants to *edit*
+Default to `nanobanana2.1` unless the user explicitly wants to *edit*
 something on an existing image — then switch to `kontext-pro`.
 
 ## Prompt patterns that work
