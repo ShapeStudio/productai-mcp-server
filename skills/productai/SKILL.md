@@ -38,14 +38,16 @@ general image model.
 
 | User goal | Model |
 |---|---|
-| Photoreal re-shoot of a product (default) | `nanobananapro` |
+| Photoreal re-shoot of a product (default) | `nanobanana2.1` |
+| Highest-quality re-shoot, cost matters less | `nanobananapro` |
 | Edit an existing image (add/remove/swap elements, recolour) | `kontext-pro` |
+| Small precise edit that must keep the product untouched | `gpt-2.5-precise` |
 | Highest-fidelity / complex edits | `kontext-max` |
-| Compose from 2–5 reference images | `seedream` or `nanobanana` |
+| Compose from 2–5 reference images | `seedream`, `nanobanana` or `nanobanana2.1` |
 | Quick low-cost draft | `gpt-low` or `gpt-medium` |
-| Higher-quality GPT result | `gpt-high` |
+| Best GPT model | `gpt-2.5` |
 
-Default to `nanobananapro` unless the user explicitly wants to *edit*
+Default to `nanobanana2.1` unless the user explicitly wants to *edit*
 something on an existing image — then switch to `kontext-pro`.
 
 ## Prompt patterns that work
@@ -81,8 +83,9 @@ ProductAI only changes the scene.
 
 Use `generate_and_wait` with `count: 3` (or `count: 4`) and return
 all completed images so the user can pick a winner. Don't generate
-one at a time and call it three times. Each variant consumes one
-credit on the user's ProductAI account.
+one at a time and call it three times. Each variant is charged
+separately on the user's ProductAI account, at that model's price
+(2–10 credits per image).
 
 ## When a job takes a while
 
@@ -92,9 +95,9 @@ turn — don't just hand the user a job ID and stop.
 
 ## When the user supplies several reference images
 
-Switch the model to `seedream` (or `nanobanana`) and pass `image_url`
-as an array of URLs. Use this for "combine the look of A with the
-product in B" requests.
+Switch the model to `seedream` (or `nanobanana`, `nanobanana2.1`,
+`gpt-2.5`) and pass `image_url` as an array of up to 5 URLs. Use
+this for "combine the look of A with the product in B" requests.
 
 ## Errors and edge cases
 

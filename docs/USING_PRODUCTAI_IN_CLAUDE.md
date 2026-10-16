@@ -63,9 +63,13 @@ You don't normally call these by name — just describe what you want and Claude
 
 **Reference files** (`upload_asset`): Attach an image in chat (or give a URL) and it's uploaded to ProductAI, returning a hosted URL you can pass as `image_url` to any of the tools below. Max 10MB; PNG, JPG, or WebP.
 
-**Image** (`generate_image` / `generate_and_wait`): `nanobananapro` (default, best quality), `gpt-2`, `gpt-1.5`, `gpt-low`, `gpt-medium`, `gpt-high`, `kontext-pro`, `kontext-max`, `nanobanana`, `nanobanana2`, `seedream`.
+**Image** (`generate_image` / `generate_and_wait`): `nanobanana2.1` (default), `nanobananapro` (best quality), `gpt-2.5`, `gpt-2.5-precise`, `gpt-2`, `gpt-1.5`, `gpt-low`, `gpt-medium`, `gpt-high`, `kontext-pro`, `kontext-max`, `nanobanana`, `nanobanana2`, `seedream`, `seedream-5-lite`, `seedream-5-pro`.
 
-Multi-image input (passing several reference photos in one call, up to 14) works with `seedream`, `nanobananapro`, `nanobanana`, and `nanobanana2`.
+- `gpt-2.5` — OpenAI GPT Image 2.5, the best GPT model: better images and faster (~11s) than `gpt-2`. 10 credits.
+- `gpt-2.5-precise` — the precise-edit variant of GPT Image 2.5: changes only what you ask for and keeps the product, composition and background as they are. Best for small targeted edits to an existing photo; a little slower (~15–20s). 10 credits.
+- `nanobanana2.1` — Google Nano Banana 2.1, the successor to `nanobanana2`, and the default: most of `nanobananapro` at 5 credits instead of 8.
+
+Multi-image input (passing several reference photos in one call, up to 5) works with `gpt-2.5`, `gpt-2.5-precise`, `gpt-2`, `gpt-1.5`, `seedream`, `nanobananapro`, `nanobanana`, `nanobanana2`, and `nanobanana2.1`; `seedream-5-lite` and `seedream-5-pro` take up to 10.
 
 **Video** (`generate_video`): Seedance 2.0. Give a prompt and, optionally, one or more reference images (up to 9) to animate a product — omit the image for text-to-video. Options: `resolution` (480p/720p/1080p/4k), `aspect_ratio`, `duration` (4–15s or auto), `generate_audio`. It returns a short **video** (a video URL, not a still) and takes a few minutes, so start it and check back with `wait_for_job` or `get_job`. Billed per second of output scaled by resolution (e.g. a 5s 720p clip ≈ 35 credits).
 

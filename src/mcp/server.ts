@@ -154,7 +154,7 @@ export function buildMcpServer(userId: string): McpServer {
     {
       title: "Generate product photo",
       description:
-        "Start a product photo generation. Provide an image URL (or array of URLs for seedream/nanobanana) and a prompt. Use `count` to start multiple variants in parallel.",
+        "Start a product photo generation. Provide an image URL (or array of URLs for multi-image models) and a prompt. Use `count` to start multiple variants in parallel.",
       annotations: {
         title: "Generate product photo",
         readOnlyHint: false,
@@ -164,10 +164,10 @@ export function buildMcpServer(userId: string): McpServer {
       },
       inputSchema: {
         image_url: z
-          .union([z.string().url(), z.array(z.string().url())])
-          .describe("URL of the product image, or an array of URLs (up to 14) for multi-image models (seedream, nanobananapro, nanobanana, nanobanana2)"),
+          .union([z.string().url(), z.array(z.string().url()).max(10)])
+          .describe("URL of the product image, or an array of URLs (up to 5, or 10 for seedream-5-lite/seedream-5-pro) for multi-image models (gpt-2.5, gpt-2.5-precise, gpt-2, gpt-1.5, seedream, seedream-5-lite, seedream-5-pro, nanobananapro, nanobanana, nanobanana2, nanobanana2.1)"),
         prompt: z.string().describe("Text prompt describing the desired product photo"),
-        model: z.enum(MODELS).default("nanobananapro").describe(`Model. Default: nanobananapro. For video use the separate generate_video tool.`),
+        model: z.enum(MODELS).default("nanobanana2.1").describe(`Model. Default: nanobanana2.1 (most of nanobananapro at a lower price). nanobananapro is the highest-quality product shot; gpt-2.5 is the best GPT model; gpt-2.5-precise makes small targeted edits that keep the product, composition and background unchanged. For video use the separate generate_video tool.`),
         count: z
           .number()
           .int()
@@ -275,9 +275,9 @@ export function buildMcpServer(userId: string): McpServer {
         openWorldHint: true,
       },
       inputSchema: {
-        image_url: z.union([z.string().url(), z.array(z.string().url())]),
+        image_url: z.union([z.string().url(), z.array(z.string().url()).max(10)]),
         prompt: z.string(),
-        model: z.enum(MODELS).default("nanobananapro"),
+        model: z.enum(MODELS).default("nanobanana2.1"),
         count: z
           .number()
           .int()
