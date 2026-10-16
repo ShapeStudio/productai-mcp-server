@@ -17,6 +17,8 @@ export const MODELS = [
   "nanobanana2",
   "nanobanana2.1",
   "seedream",
+  "seedream-5-lite",
+  "seedream-5-pro",
 ] as const;
 
 export type Model = (typeof MODELS)[number];

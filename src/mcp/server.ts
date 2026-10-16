@@ -165,7 +165,7 @@ export function buildMcpServer(userId: string): McpServer {
       inputSchema: {
         image_url: z
           .union([z.string().url(), z.array(z.string().url())])
-          .describe("URL of the product image, or an array of URLs (up to 5) for multi-image models (gpt-2.5, gpt-2.5-precise, gpt-2, gpt-1.5, seedream, nanobananapro, nanobanana, nanobanana2, nanobanana2.1)"),
+          .describe("URL of the product image, or an array of URLs (up to 5, or 10 for seedream-5-lite/seedream-5-pro) for multi-image models (gpt-2.5, gpt-2.5-precise, gpt-2, gpt-1.5, seedream, seedream-5-lite, seedream-5-pro, nanobananapro, nanobanana, nanobanana2, nanobanana2.1)"),
         prompt: z.string().describe("Text prompt describing the desired product photo"),
         model: z.enum(MODELS).default("nanobananapro").describe(`Model. Default: nanobananapro. gpt-2.5 is the best GPT model; gpt-2.5-precise makes small targeted edits that keep the product, composition and background unchanged; nanobanana2.1 is the cheaper Nano Banana. For video use the separate generate_video tool.`),
         count: z

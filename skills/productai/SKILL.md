@@ -83,8 +83,9 @@ ProductAI only changes the scene.
 
 Use `generate_and_wait` with `count: 3` (or `count: 4`) and return
 all completed images so the user can pick a winner. Don't generate
-one at a time and call it three times. Each variant consumes one
-credit on the user's ProductAI account.
+one at a time and call it three times. Each variant is charged
+separately on the user's ProductAI account, at that model's price
+(1–10 credits per image).
 
 ## When a job takes a while
 
