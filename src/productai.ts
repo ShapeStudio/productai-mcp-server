@@ -3,6 +3,8 @@ import { query } from "./db.js";
 
 // Image models — POST /api/generate
 export const MODELS = [
+  "gpt-2.5",
+  "gpt-2.5-precise",
   "gpt-2",
   "gpt-1.5",
   "gpt-low",
@@ -13,6 +15,7 @@ export const MODELS = [
   "nanobananapro",
   "nanobanana",
   "nanobanana2",
+  "nanobanana2.1",
   "seedream",
 ] as const;
 

@@ -40,10 +40,12 @@ general image model.
 |---|---|
 | Photoreal re-shoot of a product (default) | `nanobananapro` |
 | Edit an existing image (add/remove/swap elements, recolour) | `kontext-pro` |
+| Small precise edit that must keep the product untouched | `gpt-2.5-precise` |
 | Highest-fidelity / complex edits | `kontext-max` |
-| Compose from 2–5 reference images | `seedream` or `nanobanana` |
+| Compose from 2–5 reference images | `seedream`, `nanobanana` or `nanobanana2.1` |
+| Cheaper Nano Banana | `nanobanana2.1` |
 | Quick low-cost draft | `gpt-low` or `gpt-medium` |
-| Higher-quality GPT result | `gpt-high` |
+| Best GPT model | `gpt-2.5` |
 
 Default to `nanobananapro` unless the user explicitly wants to *edit*
 something on an existing image — then switch to `kontext-pro`.
@@ -92,8 +94,8 @@ turn — don't just hand the user a job ID and stop.
 
 ## When the user supplies several reference images
 
-Switch the model to `seedream` (or `nanobanana`) and pass `image_url`
-as an array of URLs. Use this for "combine the look of A with the
+Switch the model to `seedream` (or `nanobanana`, `nanobanana2.1`,
+`gpt-2.5`) and pass `image_url` as an array of up to 5 URLs. Use this for "combine the look of A with the
 product in B" requests.
 
 ## Errors and edge cases
