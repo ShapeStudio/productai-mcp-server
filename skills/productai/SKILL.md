@@ -145,3 +145,10 @@ see each one." The user already asked to see them.
 | `generate_image` | If the user wants the job to run in the background. |
 | `wait_for_job` | Resume waiting on a job started earlier. |
 | `get_job` | One-shot status check (returns image inline if done). |
+| `start_onboarding` | New user or "how do I start?" — follow its next step, one at a time. |
+| `test_pdp` | User shares a product page / store URL and asks how their photos are. |
+| `import_products` | User gives product page links — import, then generate from the returned photo URLs. |
+| `list_products` | Find a product already in the catalogue. |
+| `create_template_from_pinterest` | User shares a Pinterest pin of a look they want. |
+| `list_templates` | User wants scene ideas for their category. |
+| `check_fidelity` | After generating, before the user publishes — confirm the product didn't change. |
