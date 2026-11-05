@@ -42,6 +42,15 @@ We are the OAuth provider exposed to Claude (with RFC 7591 Dynamic Client Regist
 | `generate_video` | no | Start a Seedance 2.0 video job (text- or image-to-video) |
 | `get_job` | yes | Status of a job |
 | `wait_for_job` | yes | Poll an existing job until done |
+| `start_onboarding` | no | Guided first run; reads `/api/account`, saves answers via `/api/onboarding` |
+| `test_pdp` | yes | PDP / store photo audit via the site's `POST /api/audit/quick` (needs `AUDIT_SERVER_KEY`) |
+| `import_products` | no | Import products from page URLs → `/api/import-product` |
+| `list_products` | yes | Catalogue products → `/api/products` |
+| `create_template_from_pinterest` | no | Pin → saved template → `/api/templates/from-pinterest` |
+| `list_templates` | yes | Templates by category / own → `/api/templates` |
+| `check_fidelity` | no | Product-changed check → `/api/fidelity-check` (saves the verdict on the job) |
+
+The workflow tools live in `src/mcp/specialized.ts`. `npx tsx scripts/tools-harness.mts` runs each one through an MCP client with upstream HTTP stubbed.
 
 All tools carry MCP `annotations` (`title`, `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) — required by Anthropic Connectors review.
 

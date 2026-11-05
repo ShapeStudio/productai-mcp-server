@@ -20,6 +20,11 @@ export const config = {
   publicUrl: normalizeUrl(required("PUBLIC_URL")),
   productaiApiBase: optional("PRODUCTAI_API_BASE", "https://api.productai.photo/v1").replace(/\/$/, ""),
   databaseUrl: required("DATABASE_URL"),
+  // Public site that serves the PDP / store image audit (POST /api/audit/quick).
+  auditApiBase: optional("AUDIT_API_BASE", "https://www.productai.photo").replace(/\/$/, ""),
+  // Shared secret that lets this server skip the audit route's per-IP limit.
+  // Without it every connector user shares one IP's 6-checks-per-10-minutes.
+  auditServerKey: optional("AUDIT_SERVER_KEY", ""),
   auth0: {
     domain: required("AUTH0_DOMAIN"),
     issuerBaseUrl: normalizeUrl(required("AUTH0_ISSUER_BASE_URL")),

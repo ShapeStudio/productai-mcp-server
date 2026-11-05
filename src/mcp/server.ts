@@ -15,6 +15,7 @@ import {
   productaiUpload,
 } from "../productai.js";
 import { prepareUpload } from "../upload-validation.js";
+import { registerSpecializedTools } from "./specialized.js";
 
 /** A result URL that points at a video file rather than a still image. */
 function isVideoUrl(url: string): boolean {
@@ -436,6 +437,8 @@ export function buildMcpServer(userId: string): McpServer {
       }
     }
   );
+
+  registerSpecializedTools(server, userId);
 
   return server;
 }
