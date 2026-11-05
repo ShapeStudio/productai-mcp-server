@@ -31,7 +31,7 @@ app.disable("x-powered-by");
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-const VERSION = "0.3.0-upload-integrity";
+const VERSION = "0.4.0-workflow-tools";
 app.get("/healthz", (_req, res) => {
   res.json({ ok: true, name: "productai-mcp-server", version: VERSION });
 });

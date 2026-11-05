@@ -503,7 +503,7 @@ function renderTemplates(items: TemplateItem[], mine: boolean, category?: string
       ? "No saved templates yet. Make one from a Pinterest pin with `create_template_from_pinterest`."
       : `No templates found${category ? ` for ${category}` : ""}.`;
   }
-  const head = mine ? "Your templates" : `Templates${category ? ` · ${category}` : ""}`;
+  const head = mine ? "Your templates" : `Templates${category && category !== "other" ? ` · ${category}` : ""}`;
   const lines = [`**${head}** (${items.length})`, ""];
   for (const t of items) {
     lines.push(`### ${t.title ?? "Untitled"} · id \`${t.id}\``);

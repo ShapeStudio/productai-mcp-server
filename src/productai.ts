@@ -1,5 +1,6 @@
 import { config } from "./config.js";
 import { query } from "./db.js";
+import { log, captureError } from "./observability.js";
 
 // Image models — POST /api/generate
 export const MODELS = [
@@ -77,6 +78,7 @@ export async function ensureApiKey(userId: string): Promise<string> {
     return existing.rows[0].key;
   }
 
+  let lastError: unknown;
   // Mint a new key matching the relum-api format. Retry on the rare
   // collision against the global UNIQUE constraint.
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -86,8 +88,7 @@ export async function ensureApiKey(userId: string): Promise<string> {
     try {
       await query(
         `insert into "ApiKeys" ("userId", name, "key", last4, status, "createdAt", "updatedAt")
-         values ($1, $2, $3, $4, 'ACTIVE', now(), now())
-         on conflict ("name") do nothing`,
+         values ($1, $2, $3, $4, 'ACTIVE', now(), now())`,
         [Number(userId), name, key, last4]
       );
       const verify = await query<{ key: string }>(
@@ -102,10 +103,14 @@ export async function ensureApiKey(userId: string): Promise<string> {
         return verify.rows[0].key;
       }
     } catch (err) {
-      // most likely a unique-key collision; try again
+      // "ApiKeys"."key" is UNIQUE, so a random-key collision lands here; retry
+      // with a fresh key. Anything else is a real failure: log it.
+      lastError = err;
+      log.warn({ err, userId }, "api key insert failed");
       continue;
     }
   }
+  captureError(lastError ?? new Error("api key provisioning failed"), { userId });
   throw new Error("Could not provision a ProductAI API key for this account. Please try again or contact support.");
 }
 
