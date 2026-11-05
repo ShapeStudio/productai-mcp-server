@@ -254,7 +254,8 @@ export function registerSpecializedTools(server: McpServer, userId: string): voi
     async ({ category, mine, limit }) => {
       try {
         const qs = new URLSearchParams({ limit: String(limit), mine: String(mine) });
-        if (category) qs.set("category", category);
+        // "other" has no template category; show everything instead.
+        if (category && category !== "other") qs.set("category", category);
         const res = (await productaiRequest(userId, "GET", `/api/templates?${qs}`)) as Envelope<TemplateItem[]>;
         return { content: [text(renderTemplates(res.data ?? [], mine, category))] };
       } catch (err) {
