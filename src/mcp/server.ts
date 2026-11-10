@@ -346,8 +346,8 @@ export function buildMcpServer(userId: string): McpServer {
       title: "Generate product video",
       description:
         "Start a product video generation. Give a prompt (required) and choose a `model`:\n" +
-        "- `seedance` (Seedance 2.0, default): text-to-video or reference-to-video. Optionally pass one or more reference images (up to 9) to animate a product, or omit the image for text-to-video. Supports `resolution`, any `aspect_ratio`, `duration` 4-15s or \"auto\", and `generate_audio`. Billed per second scaled by resolution (e.g. a 5s 720p clip ≈ 35 credits; 1080p/4k cost much more).\n" +
-        "- `gemini-omni` (Gemini Omni Flash): reference-to-video only — `image_url` is REQUIRED. Only `aspect_ratio` (16:9 or 9:16) and `duration` (3-10s, default 8) apply; `resolution` and `generate_audio` are ignored. Billed per second (~3 credits/s, e.g. 8s ≈ 24 credits).\n" +
+        "- `seedance` (Seedance 2.0, default): text-to-video or reference-to-video. Optionally pass one or more reference images (up to 9) to animate a product, or omit the image for text-to-video. Supports `resolution`, any `aspect_ratio`, `duration` 4-15s or \"auto\", and `generate_audio`. Billed per second scaled by resolution (6/12/26/60 credits per second at 480p/720p/1080p/4k, e.g. a 5s 720p clip = 60 credits).\n" +
+        "- `gemini-omni` (Gemini Omni Flash): reference-to-video only — `image_url` is REQUIRED. Only `aspect_ratio` (16:9 or 9:16) and `duration` (3-10s, default 8) apply; `resolution` and `generate_audio` are ignored. Billed per second (5 credits/s, e.g. 8s = 40 credits).\n" +
         "Video jobs run for a few minutes. Returns a job id — use `wait_for_job` (raise max_wait_seconds) or `get_job` to fetch the finished video URL.",
       annotations: {
         title: "Generate product video",

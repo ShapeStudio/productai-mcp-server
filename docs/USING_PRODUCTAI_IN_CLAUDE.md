@@ -107,7 +107,7 @@ You don't normally call these by name — just describe what you want and Claude
 
 Multi-image input (passing several reference photos in one call, up to 5) works with `gpt-2.6`, `gpt-2.6-precise`, `gpt-2.5`, `gpt-2.5-precise`, `gpt-2`, `gpt-1.5`, `seedream`, `nanobananapro`, `nanobanana`, `nanobanana2`, and `nanobanana2.1`; `seedream-5-lite` and `seedream-5-pro` take up to 10.
 
-**Video** (`generate_video`): Seedance 2.0. Give a prompt and, optionally, one or more reference images (up to 9) to animate a product — omit the image for text-to-video. Options: `resolution` (480p/720p/1080p/4k), `aspect_ratio`, `duration` (4–15s or auto), `generate_audio`. It returns a short **video** (a video URL, not a still) and takes a few minutes, so start it and check back with `wait_for_job` or `get_job`. Billed per second of output scaled by resolution (e.g. a 5s 720p clip ≈ 35 credits).
+**Video** (`generate_video`): Seedance 2.0. Give a prompt and, optionally, one or more reference images (up to 9) to animate a product — omit the image for text-to-video. Options: `resolution` (480p/720p/1080p/4k), `aspect_ratio`, `duration` (4–15s or auto), `generate_audio`. It returns a short **video** (a video URL, not a still) and takes a few minutes, so start it and check back with `wait_for_job` or `get_job`. Billed per second of output scaled by resolution (e.g. a 5s 720p clip = 60 credits).
 
 ## Credits, billing, and limits
 
