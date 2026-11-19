@@ -49,8 +49,31 @@ We are the OAuth provider exposed to Claude (with RFC 7591 Dynamic Client Regist
 | `create_template_from_pinterest` | no | Pin → saved template → `/api/templates/from-pinterest` |
 | `list_templates` | yes | Templates by category / own → `/api/templates` |
 | `check_fidelity` | no | Product-changed check → `/api/fidelity-check` (saves the verdict on the job) |
+| `list_workflows` | yes | Catalogue of named workflows |
+| `get_workflow` | yes | Step-by-step instructions for one named workflow |
 
 The workflow tools live in `src/mcp/specialized.ts`. `npx tsx scripts/tools-harness.mts` runs each one through an MCP client with upstream HTTP stubbed.
+
+## Workflows
+
+Named, multi-step recipes defined as data in `src/mcp/workflows.ts`. Each one is served twice:
+as an MCP **prompt** (slash command in Claude Code, + menu in Claude.ai) and through `get_workflow`,
+so "Use ProductAI to run /amazon-listing" works in any client (ChatGPT, claude.ai/new?q= links).
+The server `instructions` list them too. Add a workflow by adding an entry to `WORKFLOWS`.
+
+| Workflow | What it does |
+|---|---|
+| `/amazon-listing` | Main image on white + 6 secondary listing images |
+| `/ad-variants` | Four ad concepts for Meta / TikTok / Google, with copy |
+| `/shopify-catalog` | Import products and give each one a consistent scene photo |
+| `/lifestyle-shoot` | Three lifestyle scenes, then refine the favourite |
+| `/realistic-shot` | Unretouched, straight-out-of-camera look |
+| `/product-video` | Product photo → short video clip |
+| `/pdp-audit` | Score a product page's photos, then make the missing shots |
+| `/pinterest-look` | Put the product in the look of a Pinterest pin |
+| `/holiday-campaign` | Seasonal campaign set (Black Friday, Christmas…) |
+
+`get_started` (onboarding) stays a prompt in `specialized.ts`.
 
 All tools carry MCP `annotations` (`title`, `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) — required by Anthropic Connectors review.
 
