@@ -65,6 +65,24 @@ You never touch an API key. The connector mints (or reuses) one on your account 
 
 You don't normally call these by name — just describe what you want and Claude picks the right one.
 
+## Workflows
+
+Ready-made recipes you can run by name. In Claude Code type `/` and pick a ProductAI workflow; in Claude.ai open the **+** menu → ProductAI; anywhere else just say *"Use ProductAI to run /amazon-listing"* and attach your product photo.
+
+| Workflow | What it does |
+|---|---|
+| `/amazon-listing` | Main image on white + 6 secondary listing images |
+| `/ad-variants` | Four ad concepts for Meta / TikTok / Google, with copy |
+| `/shopify-catalog` | Import products and give each one a consistent scene photo |
+| `/lifestyle-shoot` | Three lifestyle scenes, then refine the favourite |
+| `/realistic-shot` | Unretouched, straight-out-of-camera look |
+| `/product-video` | Product photo → short video clip |
+| `/pdp-audit` | Score a product page's photos, then make the missing shots |
+| `/pinterest-look` | Put the product in the look of a Pinterest pin |
+| `/holiday-campaign` | Seasonal campaign set (Black Friday, Christmas…) |
+
+Ask *"what ProductAI workflows are there?"* to see the list in chat.
+
 ## Example prompts
 
 **Quick re-shoot**

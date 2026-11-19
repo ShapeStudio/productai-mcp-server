@@ -152,3 +152,5 @@ see each one." The user already asked to see them.
 | `create_template_from_pinterest` | User shares a Pinterest pin of a look they want. |
 | `list_templates` | User wants scene ideas for their category. |
 | `check_fidelity` | After generating, before the user publishes — confirm the product didn't change. |
+| `list_workflows` | User asks what ProductAI can do. |
+| `get_workflow` | User names a workflow (`/amazon-listing`, `/ad-variants`, …) or the request matches one — call first, then follow its steps. |

@@ -16,6 +16,7 @@ import {
 } from "../productai.js";
 import { prepareUpload } from "../upload-validation.js";
 import { registerSpecializedTools } from "./specialized.js";
+import { registerWorkflows, WORKFLOWS } from "./workflows.js";
 
 /** A result URL that points at a video file rather than a still image. */
 function isVideoUrl(url: string): boolean {
@@ -41,6 +42,13 @@ export function buildMcpServer(userId: string): McpServer {
         sizes: ["any"],
       },
     ],
+  }, {
+    instructions:
+      "ProductAI turns a real product photo into studio, lifestyle, ad and video content. " +
+      "It also ships ready-made workflows the user can run by name: " +
+      WORKFLOWS.map((w) => `/${w.slug}`).join(", ") +
+      ". When the user names one (e.g. \"run /amazon-listing\") or the request clearly matches one, call `get_workflow` first and follow its steps. " +
+      "Call `list_workflows` when they ask what ProductAI can do.",
   });
 
   server.registerTool(
@@ -439,6 +447,7 @@ export function buildMcpServer(userId: string): McpServer {
   );
 
   registerSpecializedTools(server, userId);
+  registerWorkflows(server);
 
   return server;
 }
